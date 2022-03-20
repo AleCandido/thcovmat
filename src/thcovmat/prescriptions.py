@@ -202,12 +202,3 @@ def plot_prescription(prescr: Prescription):
 def pprint_prescription(prescr: Prescription):
     rich.print(f"[green b]{prescr.name}[/], m: {m(prescr.mask)}, s: {s(prescr.mask)}")
     rich.print(*(f"    {line}" for line in str(prescr).splitlines()), sep="\n")
-
-
-if __name__ == "__main__":
-    prescriptions = masks_nbyn(11)
-
-    for name, prescr in prescriptions.items():
-        if name == "7b":
-            rich.print(f"[b white] {name}")
-            plot_prescription(prescr)

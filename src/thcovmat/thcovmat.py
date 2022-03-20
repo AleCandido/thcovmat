@@ -215,13 +215,13 @@ def block_plot(covmat: np.ndarray, block_size: int, filename: Optional[str] = No
     """
 
     # the matrix has to be squared
-    assert mat.shape[0] == mat.shape[1]
-    dim = mat.shape[0]
+    assert covmat.shape[0] == covmat.shape[1]
+    dim = covmat.shape[0]
 
     # coarse grain it in nxn blocks
     n = block_size
     indices = np.arange(dim - 1)[::n]
-    blocked = np.add.reduceat(np.add.reduceat(mat, indices), indices, axis=1)
+    blocked = np.add.reduceat(np.add.reduceat(covmat, indices), indices, axis=1)
     # drop leftover
     last = indices[-1]
     if last != dim - n:
@@ -234,13 +234,3 @@ def block_plot(covmat: np.ndarray, block_size: int, filename: Optional[str] = No
         plt.show()
     else:
         plt.savefig(filename)
-
-
-if __name__ == "__main__":
-    raw = raw_shifts((1000, 50, 400, 2000, 160, 720, 1000))
-    shifts = shifts_vec(raw)
-    mat = thcovmat(shifts)
-
-    print(mat.shape)
-    #  block_plot(mat, 30, "thcovmat.png")
-    block_plot(mat, 30)
