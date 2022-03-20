@@ -1,3 +1,5 @@
+import argparse
+
 import rich
 
 from . import prescriptions
@@ -21,3 +23,20 @@ def try_thcovmat():
     print(mat.shape)
     #  thcovmat.block_plot(mat, 30, "thcovmat.png")
     thcovmat.block_plot(mat, 30)
+
+
+def parse():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("what")
+
+    return parser.parse_args()
+
+
+def cli():
+    args = parse()
+
+    if "thcovmat".startswith(args.what):
+        try_thcovmat()
+    elif "prescriptions".startswith(args.what):
+        try_prescriptions()
