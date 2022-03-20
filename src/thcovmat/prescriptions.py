@@ -173,7 +173,8 @@ def nbyn(n: int = 3) -> dict[str, Prescription]:
     Returns
     -------
     dict
-      a dictionary with all the different prescriptions for the 3x3 scales
+      a dictionary with all the different prescriptions for the nxn scales
+      (keys are specific for the 3x3 case)
 
     """
     names = ["3", "3b", "3c", "3cb", "5", "5b", "7", "7b", "9"]
