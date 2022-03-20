@@ -132,6 +132,9 @@ class Prescription:
         "a.k.a. 9 point"
         prescr = cls(np.ones(shape), name="Fully incoherent", f0=f0, r0=r0)
         return prescr
+
+
+def masks_nbyn(n: int = 3) -> dict[str, Prescription]:
     """Create integer masks' dictionary.
 
     Note
@@ -140,24 +143,30 @@ class Prescription:
     since the vector is a vector of shifts, the central one is always null, even
     without masking it.
 
+    Returns
+    -------
+    dict
+      a dictionary with all the different prescriptions for the 3x3 scales
+
     """
-    prescriptions = ["3", "3b", "3c", "3cb", "5", "5b", "7", "7b", "9"]
-    masks = {prescr: np.zeros((3, 3)) for prescr in prescriptions}
+    names = ["3", "3b", "3c", "3cb", "5", "5b", "7", "7b", "9"]
+    prescriptions = {name: Prescription(np.zeros((3, 3)), name) for name in names}
 
-    masks["9"][:] = 1
-    masks["3"][1] = 1
-    masks["3b"][:, 1] = 1
-    np.fill_diagonal(masks["3c"], 1)
-    np.fill_diagonal(masks["3cb"][::-1], 1)
-    masks["5b"] = np.logical_or(masks["3c"], masks["3cb"]) * 1
-    masks["5"] = np.logical_or(masks["3"], masks["3b"]) * 1
-    masks["7"] = np.logical_or(masks["5"], masks["3c"]) * 1
-    masks["7b"] = np.logical_or(masks["5"], masks["3cb"]) * 1
+    prescriptions["3"] = Prescription.ren((n, n))
+    prescriptions["3b"] = Prescription.fact((n, n))
+    prescriptions["3c"] = Prescription.sum((n, n))
+    prescriptions["3cb"] = Prescription.antisum((n, n))
+    prescriptions["5"] = Prescription.christ((n, n))
+    prescriptions["5b"] = Prescription.standrews((n, n))
+    prescriptions["7"] = Prescription.tridiag((n, n))
+    prescriptions["7b"] = Prescription.antitridiag((n, n))
+    prescriptions["9"] = Prescription.incoherent((n, n))
 
-    return masks
+    return prescriptions
 
 
 def s(mask: np.ndarray) -> int:
+    """Number of independent scales."""
     s = 0
 
     if mask.sum() > 1:
@@ -171,12 +180,34 @@ def s(mask: np.ndarray) -> int:
 
 
 def m(mask: np.ndarray) -> int:
-    return np.sum(mask) - 1
+    """Number of prescription's points.
+
+    Possibly weighted, for non-binary masks.
+
+    """
+    return np.sum(mask)
+
+
+def normalization(mask: np.ndarray) -> float:
+    """Normalization for given prescription"""
+    return s(mask) / m(mask)
+
+
+def plot_prescription(prescr: Prescription):
+    plt.title(prescr.name)
+    sns.heatmap(prescr.mask)
+    plt.show()
+
+
+def pprint_prescription(prescr: Prescription):
+    rich.print(f"[green b]{prescr.name}[/], m: {m(prescr.mask)}, s: {s(prescr.mask)}")
+    rich.print(*(f"    {line}" for line in str(prescr).splitlines()), sep="\n")
 
 
 if __name__ == "__main__":
-    masks = prescriptions_masks()
+    prescriptions = masks_nbyn(11)
 
-    for prescr, mask in masks.items():
-        rich.print(f"[green b]{prescr}[/], m: {m(mask)}, s: {s(mask)}")
-        rich.print(*(f"    {line}" for line in str(mask).splitlines()), sep="\n")
+    for name, prescr in prescriptions.items():
+        if name == "7b":
+            rich.print(f"[b white] {name}")
+            plot_prescription(prescr)
