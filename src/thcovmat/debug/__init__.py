@@ -2,17 +2,18 @@ import argparse
 
 import rich
 
-from . import prescriptions
-from . import thcovmat
+from .. import prescriptions
+from .. import thcovmat
+from . import out
 
 
 def try_prescriptions():
-    prescrs = prescriptions.masks_nbyn(11)
+    prescrs = prescriptions.nbyn(11)
 
     for name, prescr in prescrs.items():
         if name == "7b":
             rich.print(f"[b white] {name}")
-            prescriptions.plot_prescription(prescr)
+            out.plot_prescription(prescr)
 
 
 def try_thcovmat():
@@ -21,8 +22,8 @@ def try_thcovmat():
     mat = thcovmat.thcovmat(shifts)
 
     print(mat.shape)
-    #  thcovmat.block_plot(mat, 30, "thcovmat.png")
-    thcovmat.block_plot(mat, 30)
+    #  out.block_plot(mat, 30, "thcovmat.png")
+    out.block_plot(mat, 30)
 
 
 def parse():

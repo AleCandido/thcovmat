@@ -21,3 +21,5 @@ seaborn = "^0.11.2"
 debug = "thcovmat.debug:cli"
 
 [tool.poe.tasks]
+pr = "debug prescription"
+th = "debug thcovmat"

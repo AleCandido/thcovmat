@@ -17,11 +17,9 @@ Comparison with the old method:
   :func:`thcovmat`)
 
 """
-from typing import Iterable, Optional
+from typing import Iterable
 
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 
 def raw_shifts(sizes: Iterable[int]) -> list[np.ndarray]:
@@ -190,47 +188,3 @@ def thcovmat(shifts: list[np.ndarray]) -> np.ndarray:
         blockmat.append(blockrow)
 
     return np.block(blockmat)
-
-
-def block_plot(covmat: np.ndarray, block_size: int, filename: Optional[str] = None):
-    """Plot blocked heatmap of the given squared matrix.
-
-    If no value is passed for the file name, an interactive plot is created and
-    shown.
-
-    Parameters
-    ----------
-    covmat : np.ndarray
-      the squared matrix to plot
-    block_size : int
-      the size of the square blocks in which elements of `covmat` are summed
-    filename : str or None
-      the name of the file to save
-
-    Raises
-    ------
-    AssertionError
-      if the matrix is not squared
-
-    """
-
-    # the matrix has to be squared
-    assert covmat.shape[0] == covmat.shape[1]
-    dim = covmat.shape[0]
-
-    # coarse grain it in nxn blocks
-    n = block_size
-    indices = np.arange(dim - 1)[::n]
-    blocked = np.add.reduceat(np.add.reduceat(covmat, indices), indices, axis=1)
-    # drop leftover
-    last = indices[-1]
-    if last != dim - n:
-        blocked = blocked[:-1, :-1]
-
-    sns.heatmap(blocked)
-    plt.xticks()
-    plt.yticks()
-    if filename is None:
-        plt.show()
-    else:
-        plt.savefig(filename)

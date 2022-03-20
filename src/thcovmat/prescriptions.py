@@ -15,9 +15,6 @@ from dataclasses import dataclass
 from typing import Optional, Sequence
 
 import numpy as np
-import matplotlib.pyplot as plt
-import rich
-import seaborn as sns
 
 
 @dataclass
@@ -133,8 +130,38 @@ class Prescription:
         prescr = cls(np.ones(shape), name="Fully incoherent", f0=f0, r0=r0)
         return prescr
 
+    @property
+    def s(self) -> int:
+        """Number of independent scales."""
+        # TODO: compute for generic weights
+        s = 0
 
-def masks_nbyn(n: int = 3) -> dict[str, Prescription]:
+        if self.mask.sum() > 1:
+            s += 1
+        if any(
+            any(self.mask.sum(axis) > 1) and all(self.mask.sum((axis + 1) % 2))
+            for axis in (0, 1)
+        ):
+            s += 1
+
+        return s
+
+    @property
+    def m(self) -> int:
+        """Number of prescription's points.
+
+        Possibly weighted, for non-binary masks.
+
+        """
+        return np.sum(self.mask)
+
+    @property
+    def norm(self) -> float:
+        """Normalization for given prescription"""
+        return self.s / self.m
+
+
+def nbyn(n: int = 3) -> dict[str, Prescription]:
     """Create integer masks' dictionary.
 
     Note
@@ -163,42 +190,3 @@ def masks_nbyn(n: int = 3) -> dict[str, Prescription]:
     prescriptions["9"] = Prescription.incoherent((n, n))
 
     return prescriptions
-
-
-def s(mask: np.ndarray) -> int:
-    """Number of independent scales."""
-    s = 0
-
-    if mask.sum() > 1:
-        s += 1
-    if any(
-        any(mask.sum(axis) > 1) and all(mask.sum((axis + 1) % 2)) for axis in (0, 1)
-    ):
-        s += 1
-
-    return s
-
-
-def m(mask: np.ndarray) -> int:
-    """Number of prescription's points.
-
-    Possibly weighted, for non-binary masks.
-
-    """
-    return np.sum(mask)
-
-
-def normalization(mask: np.ndarray) -> float:
-    """Normalization for given prescription"""
-    return s(mask) / m(mask)
-
-
-def plot_prescription(prescr: Prescription):
-    plt.title(prescr.name)
-    sns.heatmap(prescr.mask)
-    plt.show()
-
-
-def pprint_prescription(prescr: Prescription):
-    rich.print(f"[green b]{prescr.name}[/], m: {m(prescr.mask)}, s: {s(prescr.mask)}")
-    rich.print(*(f"    {line}" for line in str(prescr).splitlines()), sep="\n")
