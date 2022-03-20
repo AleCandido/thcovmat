@@ -8,12 +8,12 @@ from . import out
 
 
 def try_prescriptions():
-    prescrs = prescriptions.nbyn(11)
+    prescrs = prescriptions.nbym(5, 7)
 
     for name, prescr in prescrs.items():
-        if name == "7b":
-            rich.print(f"[b white] {name}")
-            out.plot_prescription(prescr)
+        rich.print(f"[b white] {name}")
+        out.pprint_prescription(prescr)
+        #  out.plot_prescription(prescr)
 
 
 def try_thcovmat():

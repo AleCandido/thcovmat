@@ -35,6 +35,7 @@ class Prescription:
         return repr(self.mask)
 
     def nullify_central(self):
+        """Remove central value, since it's a zero shift."""
         # set to null
         self.mask[self.f0, self.r0] = 0
 
@@ -42,7 +43,7 @@ class Prescription:
     def ren(
         cls, shape: Sequence[int], f0: Optional[int] = None, r0: Optional[int] = None
     ):
-        "a.k.a. 3 point ren"
+        """a.k.a. 3 point renormalization."""
         prescr = cls(np.zeros(shape), name="Renormalization only", f0=f0, r0=r0)
         prescr.mask[prescr.f0] = 1
         prescr.nullify_central()
@@ -52,7 +53,7 @@ class Prescription:
     def fact(
         cls, shape: Sequence[int], f0: Optional[int] = None, r0: Optional[int] = None
     ):
-        "a.k.a. 3 point fact"
+        """a.k.a. 3 point factorization."""
         prescr = cls(np.zeros(shape), name="Factorization only", f0=f0, r0=r0)
         prescr.mask[:, prescr.r0] = 1
         prescr.nullify_central()
@@ -62,7 +63,7 @@ class Prescription:
     def sum(
         cls, shape: Sequence[int], f0: Optional[int] = None, r0: Optional[int] = None
     ):
-        "a.k.a. 3 point correlated"
+        """a.k.a. 3 point correlated."""
         prescr = cls(np.zeros(shape), name="Fully correlated", f0=f0, r0=r0)
         np.fill_diagonal(prescr.mask, 1)
         prescr.nullify_central()
@@ -72,7 +73,7 @@ class Prescription:
     def antisum(
         cls, shape: Sequence[int], f0: Optional[int] = None, r0: Optional[int] = None
     ):
-        "a.k.a. 3 point correlated"
+        """a.k.a. 3 point anti-correlated."""
         prescr = cls(np.zeros(shape), name="Fully anti-correlated", f0=f0, r0=r0)
         np.fill_diagonal(prescr.mask[::-1], 1)
         prescr.nullify_central()
@@ -82,7 +83,7 @@ class Prescription:
     def christ(
         cls, shape: Sequence[int], f0: Optional[int] = None, r0: Optional[int] = None
     ):
-        "a.k.a. 5 point"
+        """a.k.a. 5 point."""
         el1 = cls.ren(shape, f0=f0, r0=r0)
         el2 = cls.fact(shape, f0=f0, r0=r0)
         return cls(np.logical_or(el1.mask, el2.mask) * 1.0, name="Christ", f0=f0, r0=r0)
@@ -91,7 +92,7 @@ class Prescription:
     def standrews(
         cls, shape: Sequence[int], f0: Optional[int] = None, r0: Optional[int] = None
     ):
-        "a.k.a. 5 point correlated"
+        """a.k.a. 5 point correlated."""
         el1 = cls.sum(shape, f0=f0, r0=r0)
         el2 = cls.antisum(shape, f0=f0, r0=r0)
         return cls(
@@ -102,7 +103,7 @@ class Prescription:
     def tridiag(
         cls, shape: Sequence[int], f0: Optional[int] = None, r0: Optional[int] = None
     ):
-        "a.k.a. 5 point correlated"
+        """a.k.a. 7 point correlated."""
         prescr = cls(np.zeros(shape), name="Tridiagonal", f0=f0, r0=r0)
         np.fill_diagonal(prescr.mask, 1)
         np.fill_diagonal(prescr.mask[1:], 1)
@@ -114,7 +115,7 @@ class Prescription:
     def antitridiag(
         cls, shape: Sequence[int], f0: Optional[int] = None, r0: Optional[int] = None
     ):
-        "a.k.a. 5 point correlated"
+        """a.k.a. 7 point anti-correlated."""
         prescr = cls(np.zeros(shape), name="Anti-tridiagonal", f0=f0, r0=r0)
         np.fill_diagonal(prescr.mask[::-1], 1)
         np.fill_diagonal(prescr.mask[::-1, 1:], 1)
@@ -126,25 +127,17 @@ class Prescription:
     def incoherent(
         cls, shape: Sequence[int], f0: Optional[int] = None, r0: Optional[int] = None
     ):
-        "a.k.a. 9 point"
+        """a.k.a. 9 point."""
         prescr = cls(np.ones(shape), name="Fully incoherent", f0=f0, r0=r0)
         return prescr
 
     @property
     def s(self) -> int:
         """Number of independent scales."""
-        # TODO: compute for generic weights
-        s = 0
+        m = self.mask.copy()
 
-        if self.mask.sum() > 1:
-            s += 1
-        if any(
-            any(self.mask.sum(axis) > 1) and all(self.mask.sum((axis + 1) % 2))
-            for axis in (0, 1)
-        ):
-            s += 1
-
-        return s
+        m[self.f0, self.r0] = 1
+        return np.log(np.sum(m**2)) / np.log(np.sum(m.shape) / 2)
 
     @property
     def m(self) -> int:
@@ -161,7 +154,7 @@ class Prescription:
         return self.s / self.m
 
 
-def nbyn(n: int = 3) -> dict[str, Prescription]:
+def nbym(n: int = 3, m: Optional[int] = None) -> dict[str, Prescription]:
     """Create integer masks' dictionary.
 
     Note
@@ -177,17 +170,19 @@ def nbyn(n: int = 3) -> dict[str, Prescription]:
       (keys are specific for the 3x3 case)
 
     """
-    names = ["3", "3b", "3c", "3cb", "5", "5b", "7", "7b", "9"]
-    prescriptions = {name: Prescription(np.zeros((3, 3)), name) for name in names}
+    if m is None:
+        m = n
 
-    prescriptions["3"] = Prescription.ren((n, n))
-    prescriptions["3b"] = Prescription.fact((n, n))
-    prescriptions["3c"] = Prescription.sum((n, n))
-    prescriptions["3cb"] = Prescription.antisum((n, n))
-    prescriptions["5"] = Prescription.christ((n, n))
-    prescriptions["5b"] = Prescription.standrews((n, n))
-    prescriptions["7"] = Prescription.tridiag((n, n))
-    prescriptions["7b"] = Prescription.antitridiag((n, n))
-    prescriptions["9"] = Prescription.incoherent((n, n))
+    prescriptions = {}
+
+    prescriptions["3"] = Prescription.ren((n, m))
+    prescriptions["3b"] = Prescription.fact((n, m))
+    prescriptions["3c"] = Prescription.sum((n, m))
+    prescriptions["3cb"] = Prescription.antisum((n, m))
+    prescriptions["5"] = Prescription.christ((n, m))
+    prescriptions["5b"] = Prescription.standrews((n, m))
+    prescriptions["7"] = Prescription.tridiag((n, m))
+    prescriptions["7b"] = Prescription.antitridiag((n, m))
+    prescriptions["9"] = Prescription.incoherent((n, m))
 
     return prescriptions
