@@ -150,8 +150,43 @@ class Prescription:
 
     @property
     def norm(self) -> float:
-        """Normalization for given prescription"""
+        """Normalization for given mask.
+
+        Note
+        ----
+        Do **not** use directly this normalization for the theory covmariance
+        matrix construction, since it ignores the presence of a further
+        renormalization scale in the construction process.
+        **Use instead** :meth:`N`.
+
+        Returns
+        -------
+        float
+            normalization for the given mask, i.e. for 1 factorization scale and
+            1 renormalization scale
+
+        """
         return self.s / self.m
+
+    @property
+    def N(self) -> float:
+        """Theory covmat whole normalization.
+
+        In the construction of the theory covmariance matrix, in order to make
+        blocks uniform, 2 renormalization scales are always considered
+        non-trivial (that is true for off-diagonal blocks, and enforced
+        on-diagonal).
+        In order to account for the 2 renormalization scales, the normalization
+        for the mask only (i.e. :meth:`norm`) is not enough, but a division by
+        the further independent renormalization scale is needed.
+
+        Returns
+        -------
+        float
+            the actual normalization to be used for the theory covmat
+
+        """
+        return self.norm / self.mask.shape[1]
 
 
 def nbym(n: int = 3, m: Optional[int] = None) -> dict[str, Prescription]:
